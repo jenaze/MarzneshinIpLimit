@@ -5,7 +5,7 @@ APP_NAME="marzneshiniplimit"
 CONFIG_DIR="/opt/$APP_NAME"
 COMPOSE_FILE="$CONFIG_DIR/docker-compose.yml"
 
-FETCH_REPO="muttehitler/MarzneshinIpLimit"
+FETCH_REPO="jenaze/MarzneshinIpLimit"
 SCRIPT_URL="https://github.com/$FETCH_REPO/raw/main/script.sh"
 
 colorized_echo() {
@@ -123,8 +123,8 @@ install_marzneshin_ip_limit_script() {
 
 install_marzneshin_ip_limit() {
     # Fetch releases
-    FILES_URL_PREFIX="https://raw.githubusercontent.com/muttehitler/MarzneshinIpLimit/main"
-	COMPOSE_FILES_URL="https://raw.githubusercontent.com/muttehitler/MarzneshinIpLimit/main"
+    FILES_URL_PREFIX="https://raw.githubusercontent.com/jenaze/MarzneshinIpLimit/main"
+	COMPOSE_FILES_URL="https://raw.githubusercontent.com/jenaze/MarzneshinIpLimit/main"
   
     mkdir -p "$CONFIG_DIR"
 
