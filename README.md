@@ -1,12 +1,12 @@
 <p align="center">
     <a href="#">
-        <img src="https://img.shields.io/github/license/muttehitler/MarzneshinIpLimit?style=flat-square" />
+        <img src="https://img.shields.io/github/license/jenaze/MarzneshinIpLimit?style=flat-square" />
     </a>
-    <a href="https://t.me/muttehitler" target="_blank">
+    <a href="https://t.me/jenaze" target="_blank">
         <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
     </a>
     <a href="#">
-        <img src="https://img.shields.io/github/stars/muttehitler/MarzneshinIpLimit?style=social" />
+        <img src="https://img.shields.io/github/stars/jenaze/MarzneshinIpLimit?style=social" />
     </a>
 </p>
 
@@ -45,7 +45,7 @@ This project is an advanced version of v2iplimit, forked and improved to address
 Install command:
 
 ```bash
-sudo bash -c "$(curl -sL https://github.com/muttehitler/MarzneshinIpLimit/raw/main/script.sh)" @ install
+sudo bash -c "$(curl -sL https://github.com/jenaze/MarzneshinIpLimit/raw/main/script.sh)" @ install
 ```
 
 1. Enter your bot token
@@ -191,3 +191,4 @@ Content-Type: application/json
 }
 ```
 ---
+
