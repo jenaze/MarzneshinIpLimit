@@ -318,3 +318,18 @@ async def save_time_to_active_users(time: int) -> int:
     data = {"TIME_TO_ACTIVE_USERS": time}
     await write_json_file(data)
     return time
+
+
+async def save_telegram_message_mode(mode: str) -> str:
+    """
+    Save the telegram message mode to the config file.
+    If the config file does not exist, it creates one.
+    """
+    if os.path.exists("config.json"):
+        data = await read_json_file()
+        data["TELEGRAM_MESSAGE_MODE"] = mode
+        await write_json_file(data)
+        return mode
+    data = {"TELEGRAM_MESSAGE_MODE": mode}
+    await write_json_file(data)
+    return mode

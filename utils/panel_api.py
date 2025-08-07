@@ -228,6 +228,11 @@ async def enable_selected_users(
                         response.raise_for_status()
                     message = f"Enabled user: {username}"
                     await send_logs(message)
+                    config_data = await read_config()
+                    webhook_url = config_data.get("WEBHOOK_URL", "")
+                    if webhook_url:
+                        async with httpx.AsyncClient() as client:
+                            await client.post(webhook_url, json={"username": username, "status": "enabled"})
                     logger.info(message)
                     success = True
                     break
@@ -296,7 +301,13 @@ async def disable_user(panel_data: PanelType, username: UserType) -> None | Valu
                     )
                     response.raise_for_status()
                 message = f"Disabled user: {username.name}"
-                await send_logs(message)
+                await send_logs(message,on_ban=True)
+                config_data = await read_config()
+                webhook_url = config_data.get("WEBHOOK_URL", "")
+                if webhook_url:
+                    async with httpx.AsyncClient() as client:
+                        await client.post(webhook_url, json={"username": username.name, "status": "disabled"})
+
                 logger.info(message)
                 dis_obj = DisabledUsers()
                 await dis_obj.add_user(username.name)

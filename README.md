@@ -181,6 +181,9 @@ Content-Type: application/json
     "SECRET_KEY": "supersecretkey", //Change to a strong string like: @j#@#kjlk! 
     "API_USERNAME": "username",
     "API_PASSWORD": "password",
+    "WEBHOOK_URL": "" // if you want to get notification when user status change (disable-enable)
+    "TELEGRAM_MESSAGE_MODE": "always" // silent - on_ban
+    "OWNER_USERNAME": "null" // if you want to check users of a owner
     "CHECK_INTERVAL": 30,
     "TIME_TO_ACTIVE_USERS": 2400,
     "SPECIAL_LIMIT": [
