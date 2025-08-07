@@ -37,6 +37,7 @@ from telegram_bot.utils import (
     remove_except_user_from_config,
     save_check_interval,
     save_general_limit,
+    save_telegram_message_mode,
     save_time_to_active_users,
     show_except_users_handler,
     write_country_code_json,
@@ -59,7 +60,8 @@ from utils.read_config import read_config
     GET_GENERAL_LIMIT_NUMBER,
     GET_CHECK_INTERVAL,
     GET_TIME_TO_ACTIVE_USERS,
-) = range(15)
+    SET_TELEGRAM_MESSAGE_MODE,
+) = range(16)
 
 data = asyncio.run(read_config())
 try:
@@ -89,10 +91,11 @@ are counted (to increase accuracy)</code>
 (if user not in special limit list then this is they limit number)</code>
 <b>/set_check_interval</b>\n<code>Set the check interval time </code>
 <b>/set_time_to_active_users</b>\n<code>Set the time to active users</code>
+<b>/set_telegram_message_mode</b>\n<code>Set the telegram message mode</code>
 <b>/backup</b> \n<code>Sends 'config.json' file</code>"""
 
 
-async def send_logs(msg):
+async def send_logs(msg, on_ban=False):
     """Send logs to all admins."""
     admins = await check_admin()
     for admin in admins:
@@ -574,6 +577,35 @@ async def get_time_to_active_users_handler(
     return ConversationHandler.END
 
 
+async def set_telegram_message_mode(update: Update, _context: ContextTypes.DEFAULT_TYPE):
+    """Set the telegram message mode for the bot."""
+    check = await check_admin_privilege(update)
+    if check:
+        return check
+    await update.message.reply_html(
+        "Please choose the telegram message mode:\n"
+        + "1. <code>always</code> (send all messages)\n"
+        + "2. <code>on_ban</code> (only send message when user is banned)\n"
+        + "3. <code>silent</code> (never send messages)\n"
+        + "<b>just send the number of the mode like: <code>1</code> or <code>2</code></b>"
+    )
+    return SET_TELEGRAM_MESSAGE_MODE
+
+
+async def set_telegram_message_mode_handler(
+    update: Update, _context: ContextTypes.DEFAULT_TYPE
+):
+    """Write the telegram message mode to the config file."""
+    mode = update.message.text.strip()
+    modes = {"1": "always", "2": "on_ban", "3": "silent"}
+    selected_mode = modes.get(mode, "always")
+    await save_telegram_message_mode(selected_mode)
+    await update.message.reply_html(
+        f"Telegram message mode set to <code>{selected_mode}</code> successfully!"
+    )
+    return ConversationHandler.END
+
+
 application.add_handler(CommandHandler("start", start))
 application.add_handler(
     ConversationHandler(
@@ -670,6 +702,21 @@ application.add_handler(
         ],
         states={
             SET_EXCEPT_USERS: [MessageHandler(filters.TEXT, set_except_users_handler)],
+        },
+        fallbacks=[],
+    )
+)
+application.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CommandHandler(
+                "set_telegram_message_mode", set_telegram_message_mode
+            ),
+        ],
+        states={
+            SET_TELEGRAM_MESSAGE_MODE: [
+                MessageHandler(filters.TEXT, set_telegram_message_mode_handler)
+            ],
         },
         fallbacks=[],
     )
