@@ -1,6 +1,6 @@
 services:
   marzneshin_ip_limit:
-    image: ghcr.io/muttehitler/marzneshiniplimit:latest
+    image: ghcr.io/jenaze/marzneshiniplimit:latest
     restart: always
     environment:
       PORT: 6284
@@ -12,4 +12,5 @@ services:
       test: ["CMD", "python", "/marzneshiniplimitcode/health_check.py"]
       interval: 30s
       timeout: 10s
+
       retries: 3
