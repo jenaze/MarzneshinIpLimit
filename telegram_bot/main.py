@@ -71,7 +71,7 @@ from utils.types import PanelType
 from telegram_bot.bot import application
 
 START_MESSAGE = """
-✨<b>Commands List:</b>\n<b>/start</b> \n<code>start the bot</code>
+✨<b>BP Commands List:</b>\n<b>/start</b> \n<code>start the bot</code>
 <b>/create_config</b>
 <code>Config panel information (username, password, ...)</code>
 <b>/set_special_limit</b>
