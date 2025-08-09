@@ -216,6 +216,7 @@ async def get_chat_id(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     """
     new_admin_id = update.message.text.strip()
     try:
+        int(new_admin_id)
         if await add_admin_to_config(new_admin_id):
             await update.message.reply_html(
                 text=f"Admin <code>{new_admin_id}</code> added successfully!"
@@ -226,8 +227,8 @@ async def get_chat_id(update: Update, _context: ContextTypes.DEFAULT_TYPE):
             )
     except ValueError:
         await update.message.reply_html(
-            text=f"Wrong input: <code>{update.message.text.strip()}"
-            + "</code>\ntry again <b>/add_admin</b>"
+            text=f"Invalid ID format: <code>{new_admin_id}</code>\n"
+                 "Please send a numeric chat ID"
         )
     return ConversationHandler.END
 
@@ -255,8 +256,13 @@ async def check_admin_privilege(update: Update):
     admins = await check_admin()
     if not admins:
         await add_admin_to_config(update.effective_chat.id)
-    admins = await check_admin()
-    if update.effective_chat.id not in admins:
+        admins = await check_admin()
+    
+    # Convert both to strings for consistent comparison
+    current_id = str(update.effective_chat.id)
+    admin_ids = [str(admin_id) for admin_id in admins]
+    
+    if current_id not in admin_ids:
         await update.message.reply_html(
             text="Sorry, you do not have permission to execute this command."
         )
