@@ -2,7 +2,7 @@
 Send logs to telegram bot.
 """
 from utils.read_config import read_config
-from telegram_bot.main import application
+from telegram_bot.bot import application
 from telegram_bot.utils import check_admin
 
 
