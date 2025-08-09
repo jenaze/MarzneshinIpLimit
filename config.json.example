@@ -16,5 +16,6 @@
     "TIME_TO_ACTIVE_USERS": 2400,
     "SPECIAL_LIMIT": [],
     "outOfLimitNumber": 3,
-    "IP_LOCATION":"IR"
+    "IP_LOCATION":"IR",
+    "SERVERS": []
 }

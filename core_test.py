@@ -13,7 +13,6 @@ from utils.get_logs import (
     TASKS,
     check_and_add_new_nodes,
     create_node_task,
-    create_panel_task,
     handle_cancel,
     handle_cancel_one,
 )
@@ -109,7 +108,7 @@ async def main():  # pylint: disable=too-many-statements
     print("Telegram Bot running...")
     await add_fake_users()
     print("Print All Active Users Before 'check_ip_used' Test: ", ACTIVE_USERS)
-    await check_ip_used()
+    await check_ip_used(panel_data)
     print("Print All Active Users After 'check_ip_used' Test: ", ACTIVE_USERS)
     print("Parser Test: ", await parse_logs(LOGS))
     print("Check Ip Test: ", await check_ip("2a01:5ec0:5011:9962:d8ed:c723:c32:ac2a"))
@@ -155,9 +154,6 @@ async def main():  # pylint: disable=too-many-statements
     )
     print("Get Nodes Test: ", await get_nodes(panel_data))
     async with asyncio.TaskGroup() as tg:
-        print("Start Create Panel Task Test: ")
-        await create_panel_task(panel_data, tg)
-        await asyncio.sleep(5)
         print("Cancel Panel Task Test: ")
         await handle_cancel_one(TASKS)
     nodes_list = await get_nodes(panel_data)
@@ -189,10 +185,10 @@ async def main():  # pylint: disable=too-many-statements
 
 
 if __name__ == "__main__":
-    if (
-        input(
-            "This is test file and it may break your data. So if you want to continue Enter y: "
-        )
-        == "y"
-    ):
-        asyncio.run(main())
+    # if (
+    #     input(
+    #         "This is test file and it may break your data. So if you want to continue Enter y: "
+    #     )
+    #     == "y"
+    # ):
+    asyncio.run(main())

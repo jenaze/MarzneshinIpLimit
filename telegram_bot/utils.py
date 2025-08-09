@@ -333,3 +333,18 @@ async def save_telegram_message_mode(mode: str) -> str:
     data = {"TELEGRAM_MESSAGE_MODE": mode}
     await write_json_file(data)
     return mode
+
+
+async def save_servers_to_config(servers: list) -> list:
+    """
+    Save the servers to the config file.
+    If the config file does not exist, it creates one.
+    """
+    if os.path.exists("config.json"):
+        data = await read_json_file()
+        data["SERVERS"] = servers
+        await write_json_file(data)
+        return servers
+    data = {"SERVERS": servers}
+    await write_json_file(data)
+    return servers

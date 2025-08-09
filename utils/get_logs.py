@@ -22,6 +22,7 @@ from telegram_bot.send_message import send_logs
 from utils.logs import logger  # pylint: disable=ungrouped-imports
 from utils.panel_api import get_nodes, get_token
 from utils.parse_logs import parse_logs
+from utils.read_config import read_config
 from utils.types import NodeType, PanelType
 
 TASKS = []
@@ -142,10 +143,13 @@ async def handle_cancel_all(tasks: list[Task], panel_data: PanelType) -> None:
             nodes_list = await get_nodes(panel_data)
             if nodes_list and not isinstance(nodes_list, ValueError):
                 print("Start Create Nodes Task Test: ")
+                config_data = await read_config()
+                servers = config_data.get("SERVERS", [])
                 for node in nodes_list:
                     if node.status == "healthy":
-                        await create_node_task(panel_data, tg, node)
-                        await asyncio.sleep(3)
+                        if not servers or node.node_name in servers:
+                            await create_node_task(panel_data, tg, node)
+                            await asyncio.sleep(3)
 
 
 async def check_and_add_new_nodes(panel_data: PanelType, tg: asyncio.TaskGroup) -> None:
@@ -159,18 +163,21 @@ async def check_and_add_new_nodes(panel_data: PanelType, tg: asyncio.TaskGroup) 
     while True:
         all_nodes = await get_nodes(panel_data)
         if all_nodes and not isinstance(all_nodes, ValueError):
+            config_data = await read_config()
+            servers = config_data.get("SERVERS", [])
             for node in all_nodes:
                 if (
                     node not in task_node_mapping.values()
                     and node.status == "healthy"
                 ):
-                    log_message = (
-                        f"Add a new node. id: {node.node_id}"
-                        + f" name: {node.node_name} ip: {node.node_ip}"
-                    )
-                    await send_logs(log_message)
-                    logger.info(log_message)
-                    await create_node_task(panel_data, tg, node)
+                    if not servers or node.node_name in servers:
+                        log_message = (
+                            f"Add a new node. id: {node.node_id}"
+                            + f" name: {node.node_name} ip: {node.node_ip}"
+                        )
+                        await send_logs(log_message)
+                        logger.info(log_message)
+                        await create_node_task(panel_data, tg, node)
         await asyncio.sleep(25)
 
 

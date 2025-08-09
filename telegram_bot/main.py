@@ -9,9 +9,10 @@ import os
 import sys
 
 try:
-    from telegram import Update
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
     from telegram.ext import (
         ApplicationBuilder,
+        CallbackQueryHandler,
         CommandHandler,
         ContextTypes,
         ConversationHandler,
@@ -37,12 +38,15 @@ from telegram_bot.utils import (
     remove_except_user_from_config,
     save_check_interval,
     save_general_limit,
+    save_servers_to_config,
     save_telegram_message_mode,
     save_time_to_active_users,
     show_except_users_handler,
     write_country_code_json,
 )
+from utils.panel_api import get_nodes
 from utils.read_config import read_config
+from utils.types import PanelType
 
 (
     GET_DOMAIN,
@@ -61,15 +65,10 @@ from utils.read_config import read_config
     GET_CHECK_INTERVAL,
     GET_TIME_TO_ACTIVE_USERS,
     SET_TELEGRAM_MESSAGE_MODE,
-) = range(16)
+    SELECT_SERVER,
+) = range(17)
 
-data = asyncio.run(read_config())
-try:
-    bot_token = data["BOT_TOKEN"]
-except KeyError as exc:
-    raise ValueError("BOT_TOKEN is missing in the config file.") from exc
-application = ApplicationBuilder().token(bot_token).build()
-
+from telegram_bot.bot import application
 
 START_MESSAGE = """
 ✨<b>Commands List:</b>\n<b>/start</b> \n<code>start the bot</code>
@@ -92,19 +91,104 @@ are counted (to increase accuracy)</code>
 <b>/set_check_interval</b>\n<code>Set the check interval time </code>
 <b>/set_time_to_active_users</b>\n<code>Set the time to active users</code>
 <b>/set_telegram_message_mode</b>\n<code>Set the telegram message mode</code>
+<b>/check_servers</b>\n<code>Select servers to check</code>
 <b>/backup</b> \n<code>Sends 'config.json' file</code>"""
 
 
-async def send_logs(msg, on_ban=False):
-    """Send logs to all admins."""
-    admins = await check_admin()
-    for admin in admins:
-        try:
-            await application.bot.sendMessage(
-                chat_id=admin, text=msg, parse_mode="HTML"
-            )
-        except Exception as error:  # pylint: disable=broad-except
-            print(f"Failed to send message to admin {admin}: {error}")
+async def select_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Select servers to check.
+    """
+    check = await check_admin_privilege(update)
+    if check:
+        return check
+    config_data = await read_config(check_required_elements=True)
+
+    nodes = await get_nodes(
+        PanelType(
+            panel_domain=config_data["PANEL_DOMAIN"],
+            panel_password=config_data["PANEL_PASSWORD"],
+            panel_username=config_data["PANEL_USERNAME"],
+        )
+    )
+    if isinstance(nodes, ValueError):
+        await update.message.reply_html(text=str(nodes))
+        return ConversationHandler.END
+    if not nodes:
+        await update.message.reply_html(text="No servers found.")
+        return ConversationHandler.END
+
+    context.user_data["servers"] = config_data.get("SERVERS", [])
+    keyboard = []
+    for node in nodes:
+        is_selected = "✅" if node.node_name in context.user_data["servers"] else "❌"
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    f"{is_selected} {node.node_name}",
+                    callback_data=f"server_{node.node_name}",
+                )
+            ]
+        )
+    keyboard.append([InlineKeyboardButton("Done", callback_data="done_selecting_server")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_html(
+        text="Please select the servers you want to check:", reply_markup=reply_markup
+    )
+    return SELECT_SERVER
+
+
+async def server_button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle server selection button callbacks.
+    """
+    query = update.callback_query
+    await query.answer()
+    server_name = query.data.replace("server_", "")
+
+    if server_name in context.user_data["servers"]:
+        context.user_data["servers"].remove(server_name)
+    else:
+        context.user_data["servers"].append(server_name)
+
+    config_data = await read_config(check_required_elements=True)
+    nodes = await get_nodes(
+        PanelType(
+            panel_domain=config_data["PANEL_DOMAIN"],
+            panel_password=config_data["PANEL_PASSWORD"],
+            panel_username=config_data["PANEL_USERNAME"],
+        )
+    )
+    keyboard = []
+    for node in nodes:
+        is_selected = "✅" if node.node_name in context.user_data["servers"] else "❌"
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    f"{is_selected} {node.node_name}",
+                    callback_data=f"server_{node.node_name}",
+                )
+            ]
+        )
+    keyboard.append([InlineKeyboardButton("Done", callback_data="done_selecting_server")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(
+        text="Please select the servers you want to check:",
+        reply_markup=reply_markup,
+        parse_mode="HTML",
+    )
+    return SELECT_SERVER
+
+
+async def done_selecting_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Done selecting servers.
+    """
+    query = update.callback_query
+    await query.answer()
+    await save_servers_to_config(context.user_data["servers"])
+    await query.edit_message_text(text="Selected servers saved successfully!")
+    return ConversationHandler.END
 
 
 async def add_admin(update: Update, _context: ContextTypes.DEFAULT_TYPE):
@@ -678,6 +762,24 @@ application.add_handler(
         states={
             REMOVE_EXCEPT_USER: [
                 MessageHandler(filters.TEXT, remove_except_user_handler)
+            ],
+        },
+        fallbacks=[],
+    )
+)
+application.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CommandHandler("check_servers", select_servers),
+        ],
+        states={
+            SELECT_SERVER: [
+                CallbackQueryHandler(
+                    server_button_callback, pattern="^server_"
+                ),
+                CallbackQueryHandler(
+                    done_selecting_servers, pattern="^done_selecting_server"
+                ),
             ],
         },
         fallbacks=[],
