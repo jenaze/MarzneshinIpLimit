@@ -11,18 +11,31 @@ from logging.handlers import RotatingFileHandler
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# مسیر فایل لاگ را تعیین می‌کنیم
-log_file_path = "app.log"
+# مسیر فایل لاگ را تعیین می‌کنیم - از دایرکتوری logs استفاده می‌کنیم
+logs_dir = "logs"
+log_file_path = os.path.join(logs_dir, "app.log")
 
-# اگر مسیر یک دایرکتوری است، آن را حذف می‌کنیم
+# اطمینان از وجود دایرکتوری logs
+os.makedirs(logs_dir, exist_ok=True)
+
+# اگر app.log یک دایرکتوری است، آن را حذف می‌کنیم
+old_log_path = "app.log"
+if os.path.exists(old_log_path) and os.path.isdir(old_log_path):
+    try:
+        shutil.rmtree(old_log_path)
+        print(f"Removed conflicting directory: {old_log_path}")
+    except Exception as e:
+        print(f"Warning: Could not remove directory {old_log_path}: {e}")
+
+# اگر log_file_path یک دایرکتوری است، آن را حذف می‌کنیم
 if os.path.exists(log_file_path) and os.path.isdir(log_file_path):
     try:
         shutil.rmtree(log_file_path)
+        print(f"Removed conflicting directory: {log_file_path}")
     except Exception as e:
         print(f"Warning: Could not remove directory {log_file_path}: {e}")
-        # از مسیر جایگزین استفاده می‌کنیم
-        log_file_path = "logs/app.log"
-        os.makedirs("logs", exist_ok=True)
+        # از نام فایل جایگزین استفاده می‌کنیم
+        log_file_path = os.path.join(logs_dir, "application.log")
 
 file_handler = RotatingFileHandler(
     log_file_path, maxBytes=7 * 10**6, backupCount=3

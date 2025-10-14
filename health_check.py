@@ -1,7 +1,7 @@
 import os
 import socket
 
-LOG_FILE_PATH = "/marzneshiniplimitcode/app.log"
+LOG_FILE_PATH = "/marzneshiniplimitcode/logs/app.log"
 CONFIG_FILE_PATH = "/marzneshiniplimitcode/config.json"
 API_PORT = 6284
 

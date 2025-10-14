@@ -2,5 +2,6 @@ __pycache__
 /telegram_bot/__pycache__
 /utils/__pycache__
 app.log
+logs/
 cronjob_log.log
 .idea

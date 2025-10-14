@@ -7,7 +7,7 @@ services:
     network_mode: host
     volumes:
       - /opt/marzneshiniplimit/config.json:/marzneshiniplimitcode/config.json
-      - /opt/marzneshiniplimit/app.log:/marzneshiniplimitcode/app.log
+      - /opt/marzneshiniplimit/logs:/marzneshiniplimitcode/logs
     healthcheck:
       test: ["CMD", "python", "/marzneshiniplimitcode/health_check.py"]
       interval: 30s

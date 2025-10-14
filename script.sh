@@ -136,9 +136,9 @@ install_marzneshin_ip_limit() {
     curl -sL "$FILES_URL_PREFIX/config.json.example" -o "$CONFIG_DIR/config.json"
     colorized_echo green "File saved in $CONFIG_DIR/config.json"
 
-    colorized_echo blue "Creating app.log file"
-    touch "$CONFIG_DIR/app.log"
-    colorized_echo green "File created in $CONFIG_DIR/config.json"
+    colorized_echo blue "Creating logs directory"
+    mkdir -p "$CONFIG_DIR/logs"
+    colorized_echo green "Logs directory created in $CONFIG_DIR/logs"
 
     colorized_echo green "MarzneshinIpLimit files downloaded successfully"
 }
@@ -457,9 +457,9 @@ logs_command() {
     fi
 
     if [ "$no_follow" = true ]; then
-        tail -n 50 "$CONFIG_DIR/app.log"
+        tail -n 50 "$CONFIG_DIR/logs/app.log"
     else
-        tail -n 100 -f "$CONFIG_DIR/app.log"
+        tail -n 100 -f "$CONFIG_DIR/logs/app.log"
     fi
 }
 
