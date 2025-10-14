@@ -58,8 +58,8 @@ async def get_nodes_logs(panel_data: PanelType, node: NodeType) -> None:
                     ssl=ssl_context if scheme == "wss" else None,
                 ) as ws:
                     log_message = (
-                        "Establishing connection for"
-                        + f" node number {node.node_id} name: {node.node_name}"
+                        f"✓ Checking logs for server: {node.node_name} "
+                        + f"(ID: {node.node_id})"
                     )
                     await send_logs(log_message)
                     logger.info(log_message)
@@ -148,8 +148,11 @@ async def handle_cancel_all(tasks: list[Task], panel_data: PanelType) -> None:
                 for node in nodes_list:
                     if node.status == "healthy":
                         if not servers or node.node_name in servers:
+                            logger.info(f"Restarting check for server: {node.node_name} (ID: {node.node_id})")
                             await create_node_task(panel_data, tg, node)
                             await asyncio.sleep(3)
+                        else:
+                            logger.info(f"Server {node.node_name} is not in SERVERS list")
 
 
 async def check_and_add_new_nodes(panel_data: PanelType, tg: asyncio.TaskGroup) -> None:
@@ -172,12 +175,14 @@ async def check_and_add_new_nodes(panel_data: PanelType, tg: asyncio.TaskGroup) 
                 ):
                     if not servers or node.node_name in servers:
                         log_message = (
-                            f"Add a new node. id: {node.node_id}"
-                            + f" name: {node.node_name} ip: {node.node_ip}"
+                            f"Adding new server to check: {node.node_name} "
+                            + f"(ID: {node.node_id}, IP: {node.node_ip})"
                         )
                         await send_logs(log_message)
                         logger.info(log_message)
                         await create_node_task(panel_data, tg, node)
+                    else:
+                        logger.info(f"New server {node.node_name} is not in SERVERS list, skipping")
         await asyncio.sleep(25)
 
 

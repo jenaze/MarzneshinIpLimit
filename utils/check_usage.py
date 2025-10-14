@@ -25,6 +25,10 @@ async def check_ip_used(panel_data: PanelType, owner: str = None) -> dict:
     Check if a user (name and IP address)
     appears more than two times in the ACTIVE_USERS list
     """
+    # خواندن تنظیمات برای دریافت لیست سرورهای چک شده
+    config_data = await read_config()
+    servers = config_data.get("SERVERS", [])
+    
     all_users_log = {}
     all_users = [user.name for user in await all_user(panel_data)]
         
@@ -44,12 +48,23 @@ async def check_ip_used(panel_data: PanelType, owner: str = None) -> dict:
             reverse=True,
         )
     )
-    messages = [
+    
+    # ساختن پیام اولیه که نشان می‌دهد از کدام سرورها چک شده
+    if servers:
+        server_list = ", ".join(servers)
+        header_message = f"📊 <b>Checking servers:</b> <code>{server_list}</code>\n---------"
+        logger.info(f"Checking IPs from servers: {server_list}")
+    else:
+        header_message = "📊 <b>Checking all servers</b>\n---------"
+        logger.info("Checking IPs from all servers")
+    
+    messages = [header_message]
+    messages.extend([
         f"<code>{email}</code> with <code>{len(ips)}</code> active ip  \n- "
         + "\n- ".join(ips)
         for email, ips in all_users_log.items()
         if ips
-    ]
+    ])
     logger.info("Number of all active ips: %s", str(total_ips))
     messages.append(f"---------\nCount Of All Active IPs: <b>{total_ips}</b>")
     shorter_messages = [

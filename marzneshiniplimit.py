@@ -80,10 +80,19 @@ async def main():
         nodes_list = await get_nodes(panel_data)
         if nodes_list and not isinstance(nodes_list, ValueError):
             print("Start Create Nodes Task Test: ")
+            # خواندن لیست سرورهای مشخص شده از config
+            servers = config_file.get("SERVERS", [])
             for node in nodes_list:
                 if node.status == "healthy":
-                    await create_node_task(panel_data, tg, node)
-                    await asyncio.sleep(4)
+                    # فقط سرورهای مشخص شده را چک کن
+                    if not servers or node.node_name in servers:
+                        logger.info(f"Starting to check server: {node.node_name} (ID: {node.node_id})")
+                        print(f"✓ Starting to check server: {node.node_name}")
+                        await create_node_task(panel_data, tg, node)
+                        await asyncio.sleep(4)
+                    else:
+                        logger.info(f"Server {node.node_name} is not in SERVERS list, skipping")
+                        print(f"✗ Server {node.node_name} is not in the list")
         print("Start 'check_and_add_new_nodes' Task Test: ")
         tg.create_task(
             check_and_add_new_nodes(panel_data, tg),
