@@ -299,6 +299,24 @@ async def disable_user(panel_data: PanelType, username: UserType) -> None | Valu
     logger.info(message)
     
     return None
+
+async def disable_user2(panel_data: PanelType, username: UserType) -> None | ValueError:
+    """
+    Disable a user on the panel.
+
+    Args:
+        panel_data (PanelType): A PanelType object containing
+        the username, password, and domain for the panel API.
+        username (user): The username of the user to disable.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If the function fails to disable the user on both the HTTP
+        and HTTPS endpoints.
+    """
+
     for attempt in range(20):
         get_panel_token = await get_token(panel_data)
         if isinstance(get_panel_token, ValueError):
@@ -350,7 +368,6 @@ async def disable_user(panel_data: PanelType, username: UserType) -> None | Valu
     await send_logs(message)
     logger.error(message)
     raise ValueError(message)
-
 
 async def get_nodes(panel_data: PanelType) -> list[NodeType] | ValueError:
     """
