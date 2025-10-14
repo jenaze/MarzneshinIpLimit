@@ -190,8 +190,63 @@ Content-Type: application/json
         ["user", 1]
     ],
     "outOfLimitNumber": 3, //How often to check user IPs
-    "IP_LOCATION":"IR" //IP filter
+    "IP_LOCATION":"IR", //IP filter
+    "PROXY_URL": "" // Optional: Proxy URL for Telegram bot (e.g., "http://proxy:port" or "socks5://proxy:port")
 }
 ```
+---
+
+## Troubleshooting
+
+### DNS Resolution Error (Temporary failure in name resolution)
+
+If you see errors like `[Errno -3] Temporary failure in name resolution`, this means the Telegram bot cannot resolve domain names. This is common in regions where Telegram is blocked or when DNS is misconfigured.
+
+**Solution 1: Use a Proxy**
+
+Add a proxy URL to your `config.json`:
+
+```json
+{
+    "PROXY_URL": "http://your-proxy-server:port",
+    ...
+}
+```
+
+Or for SOCKS5 proxy:
+
+```json
+{
+    "PROXY_URL": "socks5://your-proxy-server:port",
+    ...
+}
+```
+
+**Solution 2: Check Host DNS**
+
+Make sure your host system has proper DNS configuration:
+
+```bash
+# Check DNS resolution
+nslookup api.telegram.org
+
+# If it fails, update your DNS servers
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
+```
+
+**Solution 3: Restart the Container**
+
+After updating the configuration:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+**Solution 4: Check Network Mode**
+
+The default `network_mode: host` uses the host's network stack. If you have network restrictions, consider changing to bridge mode and mapping ports.
+
 ---
 

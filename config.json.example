@@ -1,6 +1,7 @@
 {
     "GENERAL_LIMIT":1,
     "BOT_TOKEN": "BotToken",
+    "PROXY_URL": "",
     "ADMINS":[112234455],
     "EXCEPT_USERS": [],
     "PANEL_USERNAME": "username",
