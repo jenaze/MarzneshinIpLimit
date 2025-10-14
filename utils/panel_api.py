@@ -288,6 +288,17 @@ async def disable_user(panel_data: PanelType, username: UserType) -> None | Valu
         ValueError: If the function fails to disable the user on both the HTTP
         and HTTPS endpoints.
     """
+        # فقط پیام ارسال می‌شود، کاربر غیرفعال نمی‌شود
+    message = f"🚫 کاربر محدود شده شناسایی شد: {username.name} (فقط اطلاع‌رسانی - بدون غیرفعال‌سازی)"
+    
+    # ارسال پیام به تلگرام
+    await send_logs(message, on_ban=True)
+    
+    # چاپ در کنسول
+    print(message)
+    logger.info(message)
+    
+    return None
     for attempt in range(20):
         get_panel_token = await get_token(panel_data)
         if isinstance(get_panel_token, ValueError):
