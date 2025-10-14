@@ -34,12 +34,13 @@ INVALID_IPS = {
 VALID_IPS = []
 CACHE = {}
 
-API_ENDPOINTS = {
-    "http://ip-api.com/json/": "countryCode",
-    "https://ipinfo.io/": "country",
-    "https://api.iplocation.net/?ip=": "country_code2",
-    "https://ipapi.co/": None,
-}
+# List of API endpoints for IP geolocation checking
+API_ENDPOINTS = [
+    ("http://ip-api.com/json/", "countryCode"),
+    ("https://ipinfo.io/", "country"),
+    ("https://api.iplocation.net/?ip=", "country_code2"),
+    ("https://ipapi.co/", None),
+]
 
 
 async def remove_id_from_username(username: str) -> str:
@@ -56,28 +57,34 @@ async def remove_id_from_username(username: str) -> str:
 
 async def check_ip(ip_address: str) -> None | str:
     """
-    Check the geographical location of an IP address.
-
-    Get the location of the IP address.
-    The result is cached to avoid unnecessary requests for the same IP address.
+    Check the geographical location of an IP address
+    
+    Result is cached to avoid unnecessary requests
 
     Args:
-        ip_address (str): The IP address to check.
+        ip_address (str): IP address to check
 
     Returns:
-        str: The country code of the IP address location, or None
+        str: Country code of IP location or None
     """
     if ip_address in CACHE:
         return CACHE[ip_address]
-    endpoint, key = random.choice(list(API_ENDPOINTS.items()))
+    
+    endpoint, key = random.choice(API_ENDPOINTS)
     url = endpoint + ip_address
     if "ipapi.co" in endpoint:
         url += "/country"
+    
     try:
         async with httpx.AsyncClient(verify=False) as client:
             resp = await client.get(url, timeout=2)
-        info = resp.json()
-        country = info.get(key) if key else resp.text
+        
+        if key:
+            info = resp.json()
+            country = info.get(key)
+        else:
+            country = resp.text.strip()
+        
         if country:
             CACHE[ip_address] = country
         return country
@@ -87,15 +94,15 @@ async def check_ip(ip_address: str) -> None | str:
 
 async def is_valid_ip(ip: str) -> bool:
     """
-    Check if a string is a valid IP address.
-
-    This function uses the ipaddress module to try to create an IP address object from the string.
+    Check if a string is a valid IP address
+    
+    This function uses the ipaddress module to create an IP object
 
     Args:
-        ip (str): The string to check.
+        ip (str): String to check
 
     Returns:
-        bool: True if the string is a valid IP address, False otherwise.
+        bool: True if string is a valid IP, False otherwise
     """
     try:
         ip_obj = ipaddress.ip_address(ip)
@@ -111,13 +118,13 @@ EMAIL_REGEX = re.compile(r"email:\s*([A-Za-z0-9._%+-]+)")
 
 async def parse_logs(log: str) -> dict[str, UserType] | dict:  # pylint: disable=too-many-branches
     """
-    Asynchronously parse logs to extract and validate IP addresses and emails.
+    Asynchronously parse logs to extract and validate IP addresses and emails
 
     Args:
-        log (str): The log to parse.
+        log (str): Log to parse
 
     Returns:
-        list[UserType]
+        dict[str, UserType]: Dictionary of active users
     """
     data = await read_config()
     if data.get("INVALID_IPS"):

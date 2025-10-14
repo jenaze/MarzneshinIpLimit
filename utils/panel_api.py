@@ -1,5 +1,5 @@
 """
-This module contains functions to interact with the panel API.
+This module contains functions to interact with the panel API
 """
 
 import asyncio
@@ -19,27 +19,30 @@ from utils.logs import logger
 from utils.read_config import read_config
 from utils.types import NodeType, PanelType, UserType
 
+# Use tuple instead of list for schemes (better for performance)
+SCHEMES = ("https", "http")
+
 
 async def get_token(panel_data: PanelType) -> PanelType | ValueError:
     """
-    Get access token from the panel API.
+    Get access token from the panel API
+    
     Args:
-        panel_data (PanelType): A PanelType object containing
-        the username, password, and domain for the panel API.
+        panel_data (PanelType): PanelType object containing username, password, and domain
 
     Returns:
-        str: The access token from the panel API.
+        PanelType: Panel data with access token
 
     Raises:
-        ValueError: If the function fails to get a token from both the HTTP
-        and HTTPS endpoints.
+        ValueError: If failed to get token after 20 attempts
     """
     payload = {
-        "username": f"{panel_data.panel_username}",
-        "password": f"{panel_data.panel_password}",
+        "username": panel_data.panel_username,
+        "password": panel_data.panel_password,
     }
+    
     for attempt in range(20):
-        for scheme in ["https","http"]:
+        for scheme in SCHEMES:
             url = f"{scheme}://{panel_data.panel_domain}/api/admins/token"
             try:
                 async with httpx.AsyncClient(verify=False) as client:
@@ -58,14 +61,17 @@ async def get_token(panel_data: PanelType) -> PanelType | ValueError:
             except Exception as error:  # pylint: disable=broad-except
                 if scheme == "https":
                     continue
-                message = f"An unexpected error occurred: {error}"
+                message = f"Unexpected error: {error}"
                 await send_logs(message)
                 logger.error(message)
                 continue
-        await asyncio.sleep(random.randint(2, 5) * attempt)
+        
+        if attempt < 19:  # Only sleep if there's a next attempt
+            await asyncio.sleep(random.randint(2, 5) * (attempt + 1))
+    
     message = (
         "Failed to get token after 20 attempts. Make sure the panel is running "
-        + "and the username and password are correct."
+        "and the username and password are correct."
     )
     await send_logs(message)
     logger.error(message)
@@ -74,42 +80,41 @@ async def get_token(panel_data: PanelType) -> PanelType | ValueError:
 
 async def all_user(panel_data: PanelType) -> list[UserType] | ValueError:
     """
-    Get the list of all users from the panel API.
+    Get the list of all users from the panel API
 
     Args:
-        panel_data (PanelType): A PanelType object containing
-        the username, password, and domain for the panel API.
+        panel_data (PanelType): PanelType object containing panel information
 
     Returns:
-        list[user]: The list of usernames of all users.
+        list[UserType]: List of users
 
     Raises:
-        ValueError: If the function fails to get the users from both the HTTP
-        and HTTPS endpoints.
+        ValueError: If failed after 20 attempts
     """
     for attempt in range(20):
         get_panel_token = await get_token(panel_data)
         if isinstance(get_panel_token, ValueError):
             raise get_panel_token
+        
         token = get_panel_token.panel_token
-        headers = {
-            "Authorization": f"Bearer {token}",
-        }
-        for scheme in ["https","http"]:
-            config_data = await read_config()
-            owner = config_data.get("OWNER_USERNAME",None)
-            if owner != None:
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        config_data = await read_config()
+        owner = config_data.get("OWNER_USERNAME", None)
+        
+        for scheme in SCHEMES:
+            # Determine URL based on owner existence
+            if owner is not None:
                 url = f"{scheme}://{panel_data.panel_domain}/api/users?owner_username={owner}"
             else:
                 url = f"{scheme}://{panel_data.panel_domain}/api/users"
+            
             try:
                 async with httpx.AsyncClient(verify=False) as client:
                     response = await client.get(url, headers=headers, timeout=10)
                     response.raise_for_status()
                 user_inform = response.json()
-                return [
-                    UserType(name=user["username"]) for user in user_inform["items"]
-                ]
+                return [UserType(name=user["username"]) for user in user_inform["items"]]
             except SSLError:
                 continue
             except httpx.HTTPStatusError:
@@ -120,15 +125,15 @@ async def all_user(panel_data: PanelType) -> list[UserType] | ValueError:
             except Exception as error:  # pylint: disable=broad-except
                 if scheme == "https":
                     continue
-                message = f"An unexpected error occurred: {error}"
+                message = f"Unexpected error: {error}"
                 await send_logs(message)
                 logger.error(message)
                 continue
-        await asyncio.sleep(random.randint(2, 5) * attempt)
-    message = (
-        "Failed to get users after 20 attempts. make sure the panel is running "
-        + "and the username and password are correct."
-    )
+        
+        if attempt < 19:
+            await asyncio.sleep(random.randint(2, 5) * (attempt + 1))
+    
+    message = "Failed to get users after 20 attempts. Make sure the panel is running."
     await send_logs(message)
     logger.error(message)
     raise ValueError(message)

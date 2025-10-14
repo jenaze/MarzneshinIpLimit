@@ -250,7 +250,8 @@ async def admins_list(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
 async def check_admin_privilege(update: Update):
     """
-    Checks if the user has admin privileges.
+    Check admin privileges for user
+    If no admins exist, add current user as admin
     """
     admins = await check_admin()
     if not admins:
@@ -506,14 +507,15 @@ async def write_country_code(update: Update, _context: ContextTypes.DEFAULT_TYPE
 
 
 async def send_backup(update: Update, _context: ContextTypes.DEFAULT_TYPE):
-    """Send the backup file to the user."""
+    """Send the backup file to the user"""
     check = await check_admin_privilege(update)
     if check:
         return check
-    await update.message.reply_document(
-        document=open("config.json", "r", encoding="utf8"),  # pylint: disable=consider-using-with
-        caption="Here is the backup file!",
-    )
+    with open("config.json", "r", encoding="utf-8") as config_file:
+        await update.message.reply_document(
+            document=config_file,
+            caption="Here is the backup file!",
+        )
 
 
 async def set_except_users(update: Update, _context: ContextTypes.DEFAULT_TYPE):

@@ -31,11 +31,8 @@ parser = argparse.ArgumentParser(description="Help message")
 parser.add_argument("--version", action="version", version=VERSION)
 args = parser.parse_args()
 
-dis_obj = DisabledUsers()
-
 TASKS = {}
 dis_obj = DisabledUsers()
-
 config_file = None
 
 async def reload_config():
@@ -113,9 +110,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            asyncio.run(main())
-        except Exception as er:  # Handle unexpected errors
-            logger.error(f"Unexpected error: {er}")
-            asyncio.sleep(10)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Application stopped by user")
+    except Exception as er:  # Handle unexpected errors
+        logger.error(f"Unexpected error: {er}")

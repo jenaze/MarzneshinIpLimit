@@ -64,134 +64,132 @@ async def read_detected_users_config(
     check_required_elements=None,
 ) -> dict:
     """
-    read and return data from a JSON file.
+    Read and return data from detected_users.json file
     """
-    global CONFIG_DATA
-    global LAST_READ_TIME
     config_file = "detected_users.json"
 
     if not os.path.exists(config_file):
-        print("Config file not found.")
+        # Create file if it doesn't exist
+        default_data = {"detectedUsers": []}
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump(default_data, f, indent=2)
+        return default_data
+    
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as error:
+        print(
+            "Error decoding the detected_users.json file. Please check its syntax.", error
+        )
         sys.exit()
-    file_mod_time = os.path.getmtime(config_file)
-    if CONFIG_DATA is None or file_mod_time > LAST_READ_TIME:
-        try:
-            with open(config_file, "r", encoding="utf-8") as f:
-                CONFIG_DATA = json.load(f)
-        except json.JSONDecodeError as error:
-            print(
-                "Error decoding the detected_users.json file. Please check its syntax.", error
-            )
-            sys.exit()
-        if "BOT_TOKEN" not in CONFIG_DATA:
-            print("BOT_TOKEN is not set in the detected_users.json file.")
-            sys.exit()
-        if "ADMINS" not in CONFIG_DATA:
-            print("ADMINS is not set in the detected_users.json file.")
-            sys.exit()
-        LAST_READ_TIME = time.time()
+    
     if check_required_elements:
-        required_elements = [
-            "detectedUsers"
-        ]
+        required_elements = ["detectedUsers"]
         for element in required_elements:
-            if element not in CONFIG_DATA:
+            if element not in data:
                 raise ValueError(
                     f"Missing required element '{element}' in the detected_users file."
                 )
-    return CONFIG_DATA
+    return data
 
-async def detect_user(detectedUser: str, ips:str) -> str | None:
+async def detect_user(detectedUser: str, ips: list) -> str | None:
     """
-    Add a user to the exception list in the config file.
-    If the config file does not exist, it creates one.
+    Add user to detected users list
+    Creates config file if it doesn't exist
     """
     if os.path.exists("detected_users.json"):
         data = await read_d_json_file()
         users = data.get("detectedUsers", [])
-        if len([y for y in users if y["user"] == detectedUser]) > 0:
-            user = next((y for y in users if y["user"] == detectedUser), None)
-            user["outOfLimitCount"] = int(user["outOfLimitCount"]) + 1
-            data["detectedUsers"] = users
+        user_found = next((y for y in users if y["user"] == detectedUser), None)
+        
+        if user_found:
+            # Update out of limit count
+            user_found["outOfLimitCount"] = int(user_found.get("outOfLimitCount", 0)) + 1
+            user_found["ips"] = ips
             with open("detected_users.json", "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             return detectedUser
         else:
-            users.append({ "user":detectedUser, ips:ips, "outOfLimitCount":1 })
+            # Add new user
+            users.append({"user": detectedUser, "ips": ips, "outOfLimitCount": 1})
             data["detectedUsers"] = users
             with open("detected_users.json", "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             return detectedUser
     else:
-        data = {"detectedUsers": [detectedUser]}
+        # Create file with initial user
+        data = {"detectedUsers": [{"user": detectedUser, "ips": ips, "outOfLimitCount": 1}]}
         with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2)
         return detectedUser
-    return None
 
-async def add_detected_user(detectedUser: str, ips:list) -> str | None:
+async def add_detected_user(detectedUser: str, ips: list) -> str | None:
     """
-    Add a user to the exception list in the config file.
-    If the config file does not exist, it creates one.
+    Add user to detected users list
+    Creates config file if it doesn't exist
     """
     if os.path.exists("detected_users.json"):
         data = await read_d_json_file()
         users = data.get("detectedUsers", [])
-        if len([y for y in users if y["user"] == detectedUser]) > 0:
+        # Check if user exists
+        if any(user["user"] == detectedUser for user in users):
             return detectedUser
-        else:
-            users.append({ "user":detectedUser, "ips":ips, "outOfLimitCount":1 })
-            data["detectedUsers"] = users
-            with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-            return detectedUser
-    else:
-        data = {"detectedUsers": [detectedUser]}
+        
+        # Add new user
+        users.append({"user": detectedUser, "ips": ips, "outOfLimitCount": 1})
+        data["detectedUsers"] = users
         with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2)
         return detectedUser
-    return None
+    else:
+        # Create file with initial user
+        data = {"detectedUsers": [{"user": detectedUser, "ips": ips, "outOfLimitCount": 1}]}
+        with open("detected_users.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        return detectedUser
 
 async def delete_detected_user(detectedUser: str) -> str | None:
     """
-    Add a user to the exception list in the config file.
-    If the config file does not exist, it creates one.
+    Remove user from detected users list
     """
-    if os.path.exists("detected_users.json"):
-        data = await read_d_json_file()
-        users = data.get("detectedUsers", [])
-        if len([y for y in users if y["user"] == detectedUser]) > 0:
-            users.remove(next((y for y in users if y["user"] == detectedUser), None))
-            data["detectedUsers"] = users
-            with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-            return detectedUser
-    else:
-        data = {"detectedUsers": [detectedUser]}
+    if not os.path.exists("detected_users.json"):
+        return None
+    
+    data = await read_d_json_file()
+    users = data.get("detectedUsers", [])
+    user_to_remove = next((user for user in users if user["user"] == detectedUser), None)
+    
+    if user_to_remove:
+        users.remove(user_to_remove)
+        data["detectedUsers"] = users
         with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2)
         return detectedUser
     return None
 
 
-async def get_detected_users() -> None:
+async def get_detected_users() -> list:
+    """
+    Get list of detected users
+    """
     if os.path.exists("detected_users.json"):
         data = await read_d_json_file()
         return data.get("detectedUsers", [])
-    else:
-        data = {"detectedUsers": []}
-        with open("detected_users.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        return None
-    return None
+    
+    # Create file if it doesn't exist
+    data = {"detectedUsers": []}
+    with open("detected_users.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    return []
 
 
 async def read_d_json_file() -> dict:
     """
-    Reads and returns the content of the config.json file.
+    Read and return contents of detected_users.json file
 
     Returns:
-        The content of the config.json file.
+        Contents of detected_users.json file
     """
     with open("detected_users.json", "r", encoding="utf-8") as f:
         return json.load(f)
