@@ -31,6 +31,7 @@ colorized_echo() {
     esac
 }
 
+
 check_running_as_root() {
     if [ "$(id -u)" != "0" ]; then
         colorized_echo red "This command must be run as root."
